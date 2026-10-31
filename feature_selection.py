@@ -31,7 +31,7 @@ full_model.fit(X=x_train, y=y_train)
 print(f'Accuracy with all features: {full_model.score(x_test, y_test)}')
 
 features_list = x_train.columns # start with all features.
-best_score = 0
+best_score = full_model.score(x_test, y_test)
 
 """
 Takes the wine dataset and recursively discards features one at a time to improve accuracy of classification for LogisticRegression()
@@ -45,8 +45,8 @@ def feature_selection(features_list, best_score):
     # try every combo of every feature except one
     for i in range(len(features_list)): 
         # create a model with one less feature
-        x_minus = x_train.drop(features_list[i], axis=1)
-        x_test_minus = x_test.drop(features_list[i], axis=1)
+        x_minus = x_train[features_list].drop(features_list[i], axis=1)
+        x_test_minus = x_test[features_list].drop(features_list[i], axis=1)
         new_model = LogisticRegression().fit(X=x_minus, y=y_train)
         # see how well the new model does
         score = new_model.score(x_test_minus, y_test)
@@ -62,7 +62,12 @@ def feature_selection(features_list, best_score):
         # drop insignificant feature.
         features_list = features_list.drop(feature_dropped)
         # Recursively remove another feature (if improvement is found).
-        return feature_selection(features_list, best_score)
+        best_model, best_score = feature_selection(features_list, best_score)
+
+        if best_model is None:
+            return new_model, best_score
+        
+        return best_model, best_score
     else:
         # Return model & score if no improvement is found from removing a feature.
         print("No more improvement can be found!")
@@ -70,7 +75,10 @@ def feature_selection(features_list, best_score):
 
 better_model, best_score = feature_selection(features_list, best_score)
 
-print(f'Accuracy after feature selection: {best_score}')
+if (better_model is None):
+    print(f'No improvement found during selection.')
+else:
+    print(f'Accuracy after feature selection: {best_score}')
 
 
 # The dataset includes 13 features. Some may be redundant, or irrelevant to the prediction of wine category.
